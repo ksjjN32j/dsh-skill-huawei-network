@@ -15,10 +15,15 @@
     "README.md",
     "LICENSE"
   ],
-  "keywords": ["dsh", "dsh-bundle", "skill", "huawei", "vrp", "network", "wlan"],
-  "peerDependencies": {
-    "@deepseek-ai/cordis": "~4.0.5"
-  },
+  "keywords": [
+    "dsh",
+    "dsh-bundle",
+    "skill",
+    "huawei",
+    "vrp",
+    "network",
+    "wlan"
+  ],
   "icon": "./icon.svg",
   "license": "MIT",
   "engines": {
