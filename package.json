@@ -6,9 +6,11 @@
   "main": "lib/index.js",
   "exports": {
     ".": "./lib/index.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml"
   },
   "files": [
+    "cordis.patch.yml",
     "lib/index.js",
     "assets/**/*.md",
     "icon.svg",
@@ -28,5 +30,14 @@
   "license": "MIT",
   "engines": {
     "node": ">=18"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "test": "node scripts/test-provider.mjs",
+    "index": "node scripts/make-index.mjs"
   }
 }
