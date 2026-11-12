@@ -28,6 +28,17 @@ dsh plugin --profile web add link:/path/to/dsh-skill-huawei-network
 
 安装后**无需任何配置**，新会话的可用技能目录中即出现 `huawei-network-config`。
 
+## 怎么使用
+
+两种触发方式，全程零命令：
+
+1. **自动触发（推荐）**：在任意新会话里正常描述任务即可，例如"给 S5735 配三台级联 + VLAN + DHCP"、"AR 配 PPPoE 双线主备"、"AP 上不了线"、"写个批量改配置的 OPS 脚本"。Agent 从技能目录看到描述匹配会自动加载技能正文（作业铁律 + V600R025 版本差异表），再按任务**按需加载**对应参考文件——switch / router-ar / wlan-ac-ap / troubleshooting 四选一，不相关的不进上下文。
+2. **点名触发**：明确说"用 huawei-network-config 技能处理"强制加载。
+
+技能生效时 Agent 会：按 V600R025 逐字语法给命令并标注证据等级（`[文档]` / `[实测]` / `[文档未见]`）；动手前先做 `save` + 快照文件 + `commit label`；拒绝照抄本代已失效的老手册命令（`nat outbound`、`ntp-service`、`arp broadcast enable` 等）；排障类任务自动采用分层定位方法（含"v4 故障 v6 正常"类不对称指纹）。
+
+> 注意：插件版与纯 skill 版**二选一安装**；两台机器混装时，本地文件版会遮蔽插件版（DSH 技能就近层规则）。
+
 ## 发布流程（维护者）
 
 ```bash
