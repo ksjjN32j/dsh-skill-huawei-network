@@ -1,0 +1,27 @@
+{
+  "name": "@hdu/dsh-skill-huawei-network",
+  "version": "0.1.0",
+  "description": "DSH 技能包：华为 AR 路由器 / S 系列交换机 / AC+AP 无线通用配置速查（V600R025 官方文档逐字核对）",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "assets/**/*.md",
+    "icon.svg",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": ["dsh", "dsh-bundle", "skill", "huawei", "vrp", "network", "wlan"],
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "~4.0.5"
+  },
+  "icon": "./icon.svg",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}
