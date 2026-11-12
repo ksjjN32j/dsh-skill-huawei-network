@@ -21,7 +21,7 @@ const index = {
 				"zh": "华为 AR 路由器 / S 系列交换机 / AC+AP 无线通用配置速查（V600R025 官方文档逐字核对）：VLAN/STP/NAT/DHCP/IPv6/SSH/AP 开局与排障，含版本差异与防编造清单。",
 				en: "General Huawei VRP config cheat-sheet skill for AR routers, S-series switches and AC+AP WLAN (verified against V600R025 docs).",
 			},
-			author: "hdu-ailab",
+			author: process.env.MARKET_AUTHOR || "ksjjN32j",
 			keywords: ["huawei", "vrp", "network", "wlan", "skill"],
 			categories: ["skills"],
 			homepage: GIT_URL.replace(/\.git$/, ""),

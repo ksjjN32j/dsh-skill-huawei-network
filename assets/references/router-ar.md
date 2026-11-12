@@ -206,3 +206,18 @@ user-interface vty 0 4
 5. 需要动态路由时：§4 最小 OSPF。
 6. 无线：加载 references/wlan-ac-ap.md（AR 内置 WAC 同源命令）。
 7. 任何跨 portswitch 批量变更 → OPS 脚本（§9）或 Console，不碰 §10 的 rollback。
+
+## 13 WAN 高可用与进阶（V300R0xx AR6100/6200/6300 官方案例逐字；跨代参考务必对照代际）
+
+> ⚠️ 本节证据主要来自 **V300 代 AR6x00**（V600R025 的 AR5700/6700/8000 差异处已标注）。最典型代沟：V300 源 NAT 仍是 `nat outbound`，V600R025 已换 §5 的 nat-policy 模型——**两边命令不许互抄**。
+
+- **双 PPPoE 主备**：两物理口分别 `pppoe-client dial-bundle-number 1/2`，两条 Dialer1/2（`dialer user`+`dialer bundle`+`ppp chap user/password`+`ip address ppp-negotiate`）；主备靠浮动静态区分：主缺省路由缺省优先级、备 `preference 100`；`dialer number 1 autodial` 自动重拨。验证 `display pppoe-client session summary`。
+- **双 PPPoE 负载分担**：两条等价缺省路由（**都不加 preference，与主备方案互斥**）+ `ip load-balance hash src-ip` 按源分担。
+- **接口备份**：主口下 `standby interface <备份口> [priority 0-255]`（命令是 **standby** 不是 backup；大者先起、缺省 0）。一个备份口只服务一个主口、主备不得互指；**不检测链路质量**，要质量联动用 NQA。
+- **静态路由+NQA**：`nqa test-instance <admin> <test>` → `test-type icmp` → `destination-address ipv4 <探测靶IP>` → `frequency 10` → `start now`；`ip route-static <目的> <掩码> <下一跳> track nqa <admin> <test>`。AR 静态路由**无 frr 关键字**（IP FRR 属 NE 高端，勿套用）[文档未见]。
+- **策略路由两条道，不可混用**：转发（穿越）流量→流策略：`traffic classifier X operator or`+`if-match acl` → `traffic behavior X`+`redirect ip-nexthop <出口>` → `traffic policy`+`classifier ... precedence 5` → 入接口 `traffic-policy X inbound`（多 WAN 分流推荐写法）；本机自发生成流量→`policy-based-route <name> permit node`+`apply ip-address next-hop`+接口 `ip policy-based-route`（apply 下一跳不能是本机地址）。
+- **NAT 操作坑（两代通用）**：引用的 ACL **只有 permit 规则参与**；**改 ACL 不自动生效，必须 `reset nat session`**；`undo nat server` 后既有表项同样残留需 reset；池 vs Easy IP 选择=出接口 IP 外是否还有空闲公网地址；公网私用/重叠地址=ACL 里 `vpn-instance` 绑 VPN 再关联 NAT（"nat address-group static"写法文档未见 [文档未见]）；**内网用户走公网 IP 回访内网服务器（hairpin）AR6x00 无官方方案**，用 split-DNS/内网直达路由绕 [文档未见]。
+- **v6"不通"先查默认动作**：传统域间包过滤模式**不配 packet-filter=放行**（空 ACL6 才全拒）；V300R02x 起安全策略引擎模式**域间缺省=禁止**（`default action`，local→any 缺省允许）——同一条 v6 流量在两模式下落点完全不同，先 `display current-configuration | include security-policy|default action` 判断机型走哪套。
+- **IPsec 最小链（分支互联+NAT 穿越）**：`ipsec proposal`（esp 算法）→ `ike proposal`（encryption/dh/authentication）→ `ike peer <n>`（`pre-shared-key cipher`+`ike-proposal`+**`nat traversal`**）→ `ipsec policy <n> 1 isakmp proposal … ike-peer …` → 出接口 `ipsec policy`。V200R021/V300 起**缺省即 IKEv2**（用 v1 需显式 version 1）；`ike sa nat-keepalive-timer` 保活；总部主动发起须固定 `remote-address`（NAT 后地址）。
+- **升级与补丁**：文件传**存储器根目录**（系统软件 .cc / 补丁 .pat）→ `display system file-sha256 <file>` 校验 → `startup system-software <file>` → `startup saved-configuration …` → **`startup patch <pat>`（不配则重启补丁失效！）** → `display startup` 核对 → 重启。`patch load` 是 V3/V5 老命令 [文档未见]。
+- Web 开局：PC 直连 `https://192.168.1.1` 首登创建 admin（与 CLI 开局二选一，仍建议 Console 先行）。

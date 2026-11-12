@@ -26,7 +26,7 @@
 | 事项 | 本代（V600R025 AR/S） | 老手册常见写法（会报错/失效） |
 |---|---|---|
 | dot1q 终结子接口 ARP | 无需也不能配，全库无 `arp broadcast enable` [文档][实测] | `arp broadcast enable` |
-| 源 NAT | 接口 `nat enable` + `nat address-group` + `nat-policy rule → action source-nat` [文档] | `nat outbound`（全库 0 命中） |
+| 源 NAT | 接口 `nat enable` + `nat address-group` + `nat-policy rule → action source-nat` [文档] | `nat outbound`（V600R025 包 0 命中；**V300 AR6x00 仍是标准写法，跨代勿互抄**） |
 | PPPoE WAN | 子接口 `dot1q termination vid` + `pppoe-client dialer 1 bundle-number 1`；Vlanif 不支持 [实测]（本包无 PPPoE 文档 [文档未见]） | 配到 Vlanif / V200 dialer 套路 |
 | Telnet | 需先 `install feature-software WEAKEA`，不推荐；`protocol inbound ssh` 后自动禁 Telnet [文档] | 直接 `telnet server enable` |
 | SSH | 不兼容 1.x；RSA≥3072 或 ECC；用户要配 `authentication-type` + `service-type` 两步 [文档] | 单步配置 |
@@ -37,14 +37,17 @@
 | BPDU 保护 | 仅对手工配置 `stp edged-port enable` 的口生效 [文档] | 以为对自动识别边缘口生效 |
 | AP 上线认证命令 | `ap auth-mode mac-auth`（缺省即 MAC 认证）[文档] | `ap mac-authenticate` |
 | AC 数据平面加密开关 | 无独立开关；只有控制隧道 DTLS；隧道转发业务走 CAPWAP 数据隧道 [文档] | 老 AC `station-account` 之类 |
+| NTP | `ntp unicast-server <ip>`（V600 全包 0 命中 `ntp-service`）[文档] | `ntp-service unicast-server` |
+| IPSG 使能 | VLAN 视图 `ipv4 source check user-bind enable` [文档] | `ip source check user-bind enable`（V200 拼写） |
+| 上下行链路联动 | `monitor-link group N` + `port … uplink/downlink` [文档] | `link-group`（本代包 0 命中 [文档未见]） |
 
 ## 3. 任务路由（按需加载，别全读）
 
 | 要做的事 | 看哪里 |
 |---|---|
-| 交换机：VLAN/端口类型/STP/Eth-Trunk/VRRP/DHCP/OSPF/AAA-SSH/开局顺序 | [references/switch.md](references/switch.md) |
-| AR 路由器：子接口/静态路由/OSPF/NAT/DHCPv4/IPv6 RA+PD/OPS/配置回退/开局顺序 | [references/router-ar.md](references/router-ar.md) |
-| 无线：AC+WAC 组网规划/Fit AP 开局/SSID+安全+转发模式/漫游/RRM/高密/FAT AP/AP 排障/主备 | [references/wlan-ac-ap.md](references/wlan-ac-ap.md) |
+| 交换机：VLAN/端口类型/STP/Eth-Trunk/VRRP/DHCP/OSPF/AAA-SSH/开局顺序；园区三层组网与 MSTP+VRRP；接入安全三件套；iStack 堆叠 vs M-LAG；syslog/SNMP/NTP 运维 | [references/switch.md](references/switch.md) |
+| AR 路由器：子接口/静态路由/OSPF/NAT/DHCPv4/IPv6 RA+PD/OPS/配置回退/开局顺序；双 PPPoE 主备/负载分担、NQA 联动、策略路由、IPsec NAT-T、升级补丁（§13，V300 代际对照） | [references/router-ar.md](references/router-ar.md) |
+| 无线：AC+WAC 组网规划/Fit AP 开局/SSID+安全+转发模式/漫游+跨AC漫游组/RRM/高密/FAT AP/AP 排障/N+1 与 HSB/独立 AC 差异 | [references/wlan-ac-ap.md](references/wlan-ac-ap.md) |
 | 排障方法论（v4/v6 不对称、DHCP no-lease、登不进） | [references/troubleshooting.md](references/troubleshooting.md) |
 | 二层转三层/WAN 迁移割接 | troubleshooting.md §5 + 自维护的本网络割接笔记 |
 
@@ -63,4 +66,4 @@
 - 官方文档包（支持命令全文核对）：support.huawei.com 下载对应产品与 V600R025C00 版本的文档包（.hdx 为 zip，主题页在 resources/，编码 GB18030，解包后先转码再检索）。
 - 华为官网《WLAN 常见部署建议》：<https://support.huawei.com/hedex/api/pages/EDOC1100064375/AZI0130Q/08/resources/dc/dc_wlan_planning_0022.html>（其建议已并入 wlan-ac-ap.md §8）。
 - 现网实测经验：标注 [实测] 的条目来自现网操作验证（PPPoE 落点、portswitch 黑洞、rollback 不可靠）。
-- 本包查证为"不存在"的东西不要编：DHCP Snooping 独立章节（在 NAC 分册）、`arp broadcast enable`、`nat outbound`、PPPoE 文档、AP 侧 `ap delete-configuration`/`ap-sync` 命令。
+- 本包查证为"不存在"的东西不要编：DHCP Snooping 独立章节（命令在快速开局/NAC 举例中）、`arp broadcast enable`、`nat outbound`、`ntp-service` 前缀、`link-group`（用 `monitor-link`）、PPPoE 文档、AP 侧 `ap delete-configuration`/`ap-sync` 命令。

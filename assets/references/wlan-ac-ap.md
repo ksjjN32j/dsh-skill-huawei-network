@@ -1,6 +1,6 @@
 # AC/WAC + AP 无线配置速查（AR 内置 WAC、S 系列交换机内置 WAC，V600R025 文档逐字核对）
 
-> 独立 AC6800/AC6005（V200 代）大部分命令同源，但版本差异按对应文档核对。示例 IP 为文档原值，`<尖括号>` 为占位符。
+> 独立 AC（AC6605/AC6507S/AC6800/AirEngine 9700 系列，WLAN V200R0xx；新一代 AirEngine X700 已并入 V600R025 文档家族）与内置 WAC **命令族同源**（见 §10），版本差异按对应文档核对。示例 IP 为文档原值，`<尖括号>` 为占位符。
 
 ## 1 组网规划（动手前先定这四件事）
 
@@ -105,11 +105,18 @@ wlan
   wlan ; vap-profile name vap1 ; authentication-profile p1
   ```
 - 隔离：流量模板/AP 有线口模板 `user-isolate { l2 | all }`；交换机侧 `port-isolate enable group 1`。
-- 加密澄清：AC 只有**控制隧道 DTLS**（`capwap dtls psk`/`no-auth`），无独立数据平面加密开关；隧道转发业务本身走 CAPWAP 数据隧道，直接转发不建。
+- 加密澄清：内置 WAC 只有**控制隧道 DTLS**（`capwap dtls psk`/`no-auth`），本包未见数据平面独立开关 [文档未见]；隧道转发业务本身走 CAPWAP 数据隧道，直接转发不建。新一代独立 AC（AirEngine X700 V600R025）命令参考另有 `capwap dtls data-link encrypt` [文档·在线]，勿凭记忆写进 WAC 配置。
 
 ## 4 漫游 / 射频 / 高密
 
-- **WAC 内漫游零配置**；三层漫游缺省开启（VAP 模板 `layer3-roam disable` 可关）；跨 VLAN 三层漫游完整举例＝双 AP 组+双业务 VLAN+option43。**跨 AC 漫游本代无 mobility-group 命令**，官方方案是 §7 的 N+1 备份。
+- **WAC 内漫游零配置**；三层漫游缺省开启（VAP 模板 `layer3-roam disable` 可关）；跨 VLAN 三层漫游完整举例＝双 AP 组+双业务 VLAN+option43。
+- **跨 AC 漫游＝漫游组（本代 S 系列包有举例，galaxy_roaming_cfg_0033/0040 逐字）**：
+  ```text
+  wlan
+  mobility-group name mobility          # 两台 AC 配同名漫游组
+  member ip-address <对端AC的CAPWAP源地址>   # 成员=对端 CAPWAP 源地址，AC 间建 CAPWAP 隧道
+  ```
+  AC **一次只能加入一个漫游组**，只有同组 AC 间支持 AC 间漫游 [文档·在线使用指南]；跨 AC 三层漫游官方推荐**隧道转发**（直接转发跨三层依赖终端侧行为）；终端跨 AC 后靠漫游表迁移，两台 AC 的 SSID/安全配置必须一致。与 §7 N+1 是两套机制：漫游组解决"移动"，N+1 解决"故障"。
 - 快速漫游：`dot11r enable`（SSID 模板）+ `undo dot11k disable` + `undo dot11v bss-transition disable`；智能漫游：RRM 模板 `undo smart-roam disable`；免牵引 `station-unsteerable sta-mac <mac>`。
 - RRM：缺省自动调优开启（间隔 1440min），**手动信道/功率前必须先 disable 对应 auto 项**：`calibrate auto-channel-select disable`、`calibrate auto-txpower-select disable`；调优信道集合配在域管理模板；`display channel switch-record reason { calibrate | ap-sync | ... }`。
 - 5G 优先（频谱导航，VAP 模板）：`undo band-steer disable` + `band-steer higher-band` + `band-steer deny-threshold { <n> | always }`（**不能配 0，否则 higher-band 不生效**）+ `band-steer snr-threshold`；2.4G/5G 绑不同 RRM 模板且参数冲突时以 2.4G 为准。
@@ -197,6 +204,7 @@ display vap create-fail-record all
 - SSID 多时调大 beacon 间隔（约 SSID 数一半×100ms，100~500ms）；组播报文必须抑制（直接转发配在直连交换机口，隧道转发配在 AC 流量模板）。
 - 规划：大规模用 AC+Fit AP，FAT AP 只限 SOHO 小范围；AP 按组网规则命名；高容量场景中心 AP+RU。
 - 其他：新版本优先升级；AP 升级文件名与文件系统严格一致；Web 网管包版本必须与设备软件版本配套。
+- 高密/容量设计 KPI（企业 WLAN 场景化设计白皮书口径 [文档·在线]）：按"带宽+并发"估 AP 数（例：教室 100 终端/30% 并发、报告厅 60/30%）；干扰红线=**95% 区域 SINR>20dB、同频干扰信道数≤2**；高密边缘信号 **-65dBm（不低于 -75dBm）**；高密用外接定向天线/高密款型 + RTS 门限 + 智能漫游 + **MAC 优先的 Portal 认证**（认证点放 AC）；AP 多时**关闭部分 2.4G 射频**减同频干扰；吸顶间距普通教室 15~18m、高密场馆定向天线马道 12~15m。
 - 来源：<https://support.huawei.com/hedex/api/pages/EDOC1100064375/AZI0130Q/08/resources/dc/dc_wlan_planning_0022.html>
 
 ## 9 AR 内置 WAC vs S 系列内置 WAC
@@ -208,3 +216,12 @@ display vap create-fail-record all
 | 独有文档族 | `*_fatap` 平行文档族 | `galaxy_ssid_management_cfg`（离线管理 SSID/定时关 VAP）、DAP/Hotspot2.0/N+1 备份举例 |
 | N+1 备份 | 本包文档未见（≠不支持，勿凭猜配） | `dc_cfg_wlan_reliab_*` 全套 |
 | 命令一致性 | capwap source / ap auth-mode / 模板体系 / provision-ap+commit / mode-switch / band-steer / CAC 两包一致 | 同左 |
+
+## 10 独立 AC（AC6605/AC6507S/AC6800/AirEngine 9700/X700）与内置 WAC 的差异
+
+- **命令族同源**：上线链（capwap source → wlan → ap auth-mode → ap-id/ap-group）、模板体系、keep-service、`ap mode-switch fit`、N+1（`primary-access`/`backup-access`）在 V200R010~V200R024 独立 AC 与 V600R025 WAC 逐字同名 [文档·在线]。**AirEngine X700 起独立 AC 文档并入 V600R025C00 家族**，命令进一步趋同。
+- **DTLS 默认值随版本翻转（排障口径）**：独立 AC **V200R021C00 起**控制隧道才默认开 DTLS（R010~R020 默认不加密，老 AC 首配 AP 不会被挡、无需 no-auth 放行）；V600R025 WAC/X700 默认开 → 首配需 §2 的临时放行 [文档·在线]。
+- **AC 1+1 热备（HSB）为独立 AC 独有**（内置 WAC 包无对应 [文档未见]，WAC 双机用 §7 N+1）：业务 VRRP + `admin-vrrp vrid N` + `hsb-service 0`（`service-ip-port local-ip … peer-ip … local-data-port 10241 …`）+ `hsb-group 0`+`bind-service 0`+`track vrrp vrid N interface vlanif M`+`hsb enable` + `hsb-service-type { ap | dhcp | access-user } hsb-group 0`；备机 admin-VRRP 不配 priority；`capwap source ip-address <VRRP虚IP>` 让 AP 无感切换。
+- **跨 AC 漫游组**：新旧独立 AC 与 S 系列 V600R025 均支持（§4 命令）；一次只能加入一个漫游组。
+- **版本配套**：AC 与 FIT AP **N±2 跨代配套**（R24 AC 管 R22~R24 AP）；V200 代 AC 可管 V600 代 FIT AP（新特性除外）；**Wi-Fi 7 FIT AP 要求 AC ≥V200R023C00 或 V600R025C00**；逐型号配套官方口径=Info-Finder AC-AP 配套查询表 [文档·在线]。
+- 官方独立 AC 产品线：AC6507S/AC6508/AC6800V/AC6805、AirEngine 9700 系列、AirEngine X700 系列（"AC6507""AirEngine 6640"等写法未命中官方型号）。

@@ -24,6 +24,8 @@ dsh plugin --profile web add link:/path/to/dsh-skill-huawei-network
 
 方式二（插件市场）：把本仓库发布的索引 URL 添加到 DSH Web「发现」页的插件市场索引源，搜索 `huawei` 安装。索引由 `scripts/make-index.mjs` 生成（发布流程见下）。
 
+纯 skill 形态（不想装插件的人）：`node scripts/export-skill.mjs` 生成带 frontmatter 的技能目录，`cp -r dist/huawei-network-config ~/.dsh/skills/` 即可。**与插件版二选一安装**（同名时本地文件层会遮蔽插件版）。
+
 安装后**无需任何配置**，新会话的可用技能目录中即出现 `huawei-network-config`。
 
 ## 发布流程（维护者）
