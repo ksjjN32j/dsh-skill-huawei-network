@@ -38,11 +38,11 @@
 			"versions": [
 				{
 					"version": "0.1.0",
-					"publishTimestamp": 1794444644,
+					"publishTimestamp": 1794445061,
 					"source": {
 						"type": "git",
 						"url": "https://github.com/OWNER/dsh-skill-huawei-network.git",
-						"commit": "2e3b5f64240b66396046ab62bbce7599faa6c3e3"
+						"commit": "9b4f7dcacb93af50453ec785259d9df4d1a35a67"
 					}
 				}
 			]
